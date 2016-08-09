@@ -13,13 +13,11 @@ ENV JENKINS_LOGIN_USERNAME \
 
 
 # Copy hook scripts into Jenkins for automated post-init configuration
-USER root
 COPY checkEnvVars.groovy \
 			createCredentials.groovy \
 			createOrganisationFolder.groovy \
 			createUser.groovy \
 			$JENKINS_HOME/init.groovy.d/
-USER jenkins
 
 
 # Install default Jenkins plugins
