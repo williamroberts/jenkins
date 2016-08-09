@@ -5,7 +5,7 @@ import com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger
 import com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy
 
 // Create organisation folder
-def githubAccountName = System.getenv("GITHUB_USERNAME")
+def githubAccountName = System.getenv("GITHUB_ACCOUNT")
 def orgFolder = new OrganizationFolder(Jenkins.getInstance(), githubAccountName)
 
 // Create Github navigator for organisation folder

@@ -7,6 +7,7 @@ ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
 # Required envvars listed here for reference
 ENV JENKINS_LOGIN_USERNAME \
 		JENKINS_LOGIN_PASSWORD \
+		GITHUB_ACCOUNT \
 		GITHUB_USERNAME \
 		GITHUB_PASSWORD
 
