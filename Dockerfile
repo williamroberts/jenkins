@@ -1,7 +1,25 @@
-FROM jenkins:2.7.1
+FROM jenkins:2.7.2
+
 
 # Disable start-up wizard
 ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
+
+# Required envvars listed here for reference
+ENV JENKINS_LOGIN_USERNAME \
+		JENKINS_LOGIN_PASSWORD \
+		GITHUB_USERNAME \
+		GITHUB_PASSWORD
+
+
+# Copy hook scripts into Jenkins for automated post-init configuration
+USER root
+COPY checkEnvVars.groovy \
+			createCredentials.groovy \
+			createOrganisationFolder.groovy \
+			createUser.groovy \
+			$JENKINS_HOME/init.groovy.d/
+USER jenkins
+
 
 # Install default Jenkins plugins
 RUN install-plugins.sh \
@@ -63,6 +81,7 @@ RUN install-plugins.sh \
 	ssh-slaves \
 	email-ext;
 
+
 # Install my required plugins
 RUN install-plugins.sh \
 	github-branch-source \
@@ -74,12 +93,11 @@ RUN install-plugins.sh \
 	git-client \
 	ssh-credentials \
 	matrix-project \
-	workflow-scm-step \ 
+	workflow-scm-step \
 	mailer \
 	plain-credentials \
 	token-macro \
 	junit \
 	script-security \
 	workflow-step-api \
-	structs && \
-	setup.sh;
+	structs;
