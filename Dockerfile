@@ -99,21 +99,5 @@ RUN install-plugins.sh \
 # Install my required plugins
 RUN install-plugins.sh \
 	chucknorris \
-	credentials \
 	docker-workflow \
-	git \
-	github \
-	github-branch-source \
-	git-client \
-	greenballs \
-	junit \
-	mailer \
-	matrix-project \
-	plain-credentials \
-	scm-api \
-	script-security \
-	ssh-credentials \
-	structs \
-	token-macro \
-	workflow-scm-step \
-	workflow-step-api;
+	greenballs;
