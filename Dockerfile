@@ -29,7 +29,7 @@ ENV JENKINS_LOGIN_USERNAME \
 
 
 # Copy hook scripts into Jenkins for automated post-init configuration
-COPY *.groovy /usr/share/jenkins/ref/init.groovy.d/
+COPY groovy-scripts/*.groovy /usr/share/jenkins/ref/init.groovy.d/
 USER root
 RUN chown -R jenkins:jenkins /usr/share/jenkins/ref/init.groovy.d
 USER jenkins
