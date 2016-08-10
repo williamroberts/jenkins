@@ -38,84 +38,82 @@ COPY checkEnvVars.groovy \
 
 # Install default Jenkins plugins
 RUN install-plugins.sh \
-	cloudbees-folder \
-	junit \
-	antisamy-markup-formatter \
-	pam-auth \
-	script-security \
-	matrix-project \
-	windows-slaves \
-	mailer \
-	ldap \
-	token-macro \
-	external-monitor-job \
-	icon-shim \
-	matrix-auth \
-	build-timeout \
-	credentials \
-	structs \
-	workflow-step-api \
-	plain-credentials \
-	credentials-binding \
-	timestamper \
-	ws-cleanup \
-	ant \
-	gradle \
-	jquery-detached \
-	workflow-api \
-	workflow-support \
-	workflow-job \
-	pipeline-rest-api \
-	handlebars \
-	momentjs \
-	pipeline-stage-view \
-	pipeline-build-step \
 	ace-editor \
-	workflow-scm-step \
-	scm-api \
-	workflow-cps \
-	ssh-credentials \
+	ant \
+	antisamy-markup-formatter \
+	branch-api \
+	build-timeout \
+	cloudbees-folder \
+	credentials \
+	credentials-binding \
+	durable-task \
+	email-ext \
+	external-monitor-job \
+	git \
 	git-client \
 	git-server \
-	workflow-cps-global-lib \
-	branch-api \
-	workflow-multibranch \
-	durable-task \
-	workflow-durable-task-step \
-	pipeline-input-step \
-	pipeline-stage-step \
-	workflow-basic-steps \
-	workflow-aggregator \
-	github-api \
-	git \
 	github \
 	github-branch-source \
 	github-organization-folder \
+	gradle \
+	handlebars \
+	icon-shim \
+	junit \
+	jquery-detached \
+	ldap \
+	mailer \
 	mapdb-api \
-	subversion \
+	matrix-auth \
+	matrix-project \
+	momentjs \
+	pam-auth \
+	pipeline-build-step \
+	pipeline-input-step \
+	pipeline-rest-api \
+	pipeline-stage-step \
+	pipeline-stage-view \
+	plain-credentials \
+	script-security \
+	scm-api \
+	ssh-credentials \
 	ssh-slaves \
-	email-ext;
+	structs \
+	subversion \
+	timestamper \
+	token-macro \
+	windows-slaves \
+	workflow-api \
+	workflow-cps \
+	workflow-cps-global-lib \
+	workflow-durable-task-step \
+	workflow-job \
+	workflow-multibranch \
+	workflow-scm-step \
+	workflow-step-api \
+	workflow-support \
+	ws-cleanup \
+	workflow-basic-steps \
+	workflow-aggregator;
 
 
 # Install my required plugins
 RUN install-plugins.sh \
-	github-branch-source \
-	git \
-	github-api \
-	scm-api \
-	credentials \
-	github \
-	git-client \
-	ssh-credentials \
-	matrix-project \
-	workflow-scm-step \
-	mailer \
-	plain-credentials \
-	token-macro \
-	junit \
-	script-security \
-	workflow-step-api \
-	structs \
-	docker-workflow \
 	chucknorris \
-	greenballs;
+	credentials \
+	docker-workflow \
+	git \
+	github \
+	github-branch-source \
+	git-client \
+	greenballs \
+	junit \
+	mailer \
+	matrix-project \
+	plain-credentials \
+	scm-api \
+	script-security \
+	ssh-credentials \
+	structs \
+	token-macro \
+	workflow-scm-step \
+	workflow-step-api;
