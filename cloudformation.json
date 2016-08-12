@@ -1,0 +1,449 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+	"Description" : "Creates an EC2 instance running a Dockerised version of Jenkins. Jenkins will start up and with a pre-configured organisation folder for the Github account/organisation given as part of the parameters. You can sign into Jenkins using the username and password provided in the JenkinsUsername and JenkinsPassword parameters. The EC2 instance runs inside an AutoScalingGroup spread across all 3 availability zones (the 2 available regions in which you can deploy this stack each have 3 zones - happy coincidence) so if a the zone it's running in happens to go down, the ASG will provision a new instance",
+
+  "Parameters" : {
+    "KeyName" : {
+      "Description" : "The name of the .pem file that you plan to use to access the instance created as part of this stack.",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+    "DomainName" : {
+      "Description" : "The domain at which you wish to browse Jenkins.",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+    "SubdomainName" : {
+      "Default" : "build",
+      "Description" : "The subdomain at which you wish to browse Jenkins.",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+    "JenkinsUserName" : {
+      "Default" : "admin",
+      "Description" : "The username with which you want to authenticate with Jenkins.",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+    "JenkinsPassword" : {
+      "Default" : "admin",
+      "Description" : "The password with which you want to authenticate with Jenkins.",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+    "GithubAccount" : {
+      "Default" : "williamroberts",
+      "Description" : "The name of the Github account with which you want to initialise Jenkins.",
+      "Type" : "String"
+    },
+    "GithubUsername" : {
+      "Default" : "williamroberts",
+      "Description" : "The username with which you want Jenkins to authenticate with Github.",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+    "GithubPassword" : {
+      "AllowedPattern" : "[a-z0-9]*",
+      "Description" : "The password with which you want Jenkins to authenticate with Github. This should be a 40 character hash generated as a Github personal access token.",
+      "MaxLength" : "40",
+      "MinLength" : "40",
+      "NoEcho" : "true",
+      "Type" : "String"
+    },
+		"Region" : {
+      "AllowedValues" : [ "ap-southeast-2", "eu-west-1" ],
+			"Default" : "ap-southeast-2",
+			"Description" : "The region into which to deploy the stack. Defaults to ap-southeast-2 whilst I'm living in Sydney.",
+      "Type" : "String"
+		}
+  },
+
+  "Outputs" : {
+		"BuildUri" : {
+			"Description" : "URI for build server: ",
+      "Value" : { "Fn::Join" : [ "", [ "http://", { "Ref" : "SubdomainName" }, ".", { "Ref" : "DomainName" } ] ] }
+		}
+	},
+
+  "Mappings" :{
+    "Regions" : {
+      "ap-southeast-2" : {
+        "region" : "ap-southeast-2",
+        "timezone" : "Australia/Sydney",
+        "ami" : "ami-25f3c746"
+      },
+      "eu-west-1" : {
+        "region" : "eu-west-1",
+        "timezone" : "GB",
+        "ami" : "ami-55452e26"
+      }
+    }
+  },
+
+	"Resources" : {
+		"route53JenksinDnsRecordSet" : {
+			"Type" : "AWS::Route53::RecordSetGroup",
+			"Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "DomainName" }, "." ] ] },
+				"RecordSets" : [ {
+          "Name" : { "Fn::Join" : [ "", [ { "Ref" : "SubdomainName" }, ".", { "Ref" : "DomainName" } ] ] },
+					"Type" : "CNAME",
+					"TTL" : "300",
+          "ResourceRecords" : [ { "Fn::GetAtt" : [ "elbBuild", "CanonicalHostedZoneName" ] } ]
+				} ]
+			}
+		},
+
+    "vpcBuild" : {
+      "Type" : "AWS::EC2::VPC",
+      "Properties" : {
+        "CidrBlock" : "10.0.0.0/24",
+        "EnableDnsHostnames" : "true",
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "vpcBuild"
+          }
+        ]
+      }
+    },
+
+    "subnetABuild" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "AvailabilityZone" : { "Fn::Join" : [ "", [ { "Ref" : "Region" }, "a" ] ] },
+        "CidrBlock" : "10.0.0.1/26",
+        "MapPublicIpOnLaunch" : true,
+        "VpcId" : { "Ref" : "vpcBuild" },
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "subnetABuild"
+          }
+        ]
+      }
+    },
+
+    "subnetBBuild" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "AvailabilityZone" : { "Fn::Join" : [ "", [ { "Ref" : "Region" }, "b" ] ] },
+        "CidrBlock" : "10.0.0.64/26",
+        "MapPublicIpOnLaunch" : true,
+        "VpcId" : { "Ref" : "vpcBuild" },
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "subnetBBuild"
+          }
+        ]
+      }
+    },
+
+    "subnetCBuild" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "AvailabilityZone" : { "Fn::Join" : [ "", [ { "Ref" : "Region" }, "c" ] ] },
+        "CidrBlock" : "10.0.0.128/26",
+        "MapPublicIpOnLaunch" : true,
+        "VpcId" : { "Ref" : "vpcBuild" },
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "subnetCBuild"
+          }
+        ]
+      }
+    },
+
+    "internetGatewayBuild" : {
+      "Type" : "AWS::EC2::InternetGateway",
+      "Properties" : {
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "internetGatewayBuild"
+          }
+        ]
+      }
+    },
+
+    "vpcGatewayAttachment" : {
+      "Type" : "AWS::EC2::VPCGatewayAttachment",
+      "Properties" : {
+        "InternetGatewayId" : { "Ref" : "internetGatewayBuild" },
+        "VpcId" : { "Ref" : "vpcBuild" }
+      }
+    },
+
+    "routeTableBuild" : {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties" : {
+        "VpcId" : { "Ref" : "vpcBuild" },
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "routeTableBuild"
+          }
+        ]
+      }
+    },
+
+    "routeBuild" : {
+      "Type" : "AWS::EC2::Route",
+      "Properties" : {
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "GatewayId" : { "Ref" : "internetGatewayBuild" },
+        "RouteTableId" : { "Ref" : "routeTableBuild" }
+      }
+    },
+
+    "subnetARouteTableAssociationBuild" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "routeTableBuild" },
+        "SubnetId" : { "Ref" : "subnetABuild" }
+      }
+    },
+
+    "subnetBRouteTableAssociationBuild" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "routeTableBuild" },
+        "SubnetId" : { "Ref" : "subnetBBuild" }
+      }
+    },
+
+    "subnetCRouteTableAssociationBuild" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "routeTableBuild" },
+        "SubnetId" : { "Ref" : "subnetCBuild" }
+      }
+    },
+
+    "networkAclBuild" : {
+      "Type" : "AWS::EC2::NetworkAcl",
+      "Properties" : {
+        "VpcId" : { "Ref" : "vpcBuild" },
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "networkAclBuild"
+          }
+        ]
+      }
+    },
+
+    "networkAclEntryEgressBuild" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "CidrBlock" : "0.0.0.0/0",
+        "Egress" : true,
+        "NetworkAclId" : { "Ref" : "networkAclBuild" },
+        "Protocol" : -1,
+        "RuleAction" : "allow",
+        "RuleNumber" : 100
+      }
+    },
+
+    "networkAclEntryIngressBuild" : {
+      "Type" : "AWS::EC2::NetworkAclEntry",
+      "Properties" : {
+        "CidrBlock" : "0.0.0.0/0",
+        "Egress" : false,
+        "NetworkAclId" : { "Ref" : "networkAclBuild" },
+        "Protocol" : -1,
+        "RuleAction" : "allow",
+        "RuleNumber" : 100
+      }
+    },
+
+    "subnetANetworkAclAssociation" : {
+      "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "subnetABuild" },
+        "NetworkAclId" : { "Ref" : "networkAclBuild" }
+      }
+    },
+
+    "subnetBNetworkAclAssociation" : {
+      "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties" : {
+         "SubnetId" : { "Ref" : "subnetBBuild" },
+         "NetworkAclId" : { "Ref" : "networkAclBuild" }
+      }
+    },
+
+    "subnetCNetworkAclAssociation" : {
+      "Type" : "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "subnetCBuild" },
+        "NetworkAclId" : { "Ref" : "networkAclBuild" }
+      }
+    },
+
+    "securityGroupExternalHTTPBuild" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Provides external access via HTTP (port 80) to the ELB",
+				"VpcId" : { "Ref" : "vpcBuild" },
+        "SecurityGroupIngress" : [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : "80",
+            "ToPort" : "80",
+            "CidrIp" : "0.0.0.0/0"
+          }
+        ],
+				"Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "securityGroupExternalHTTPBuild"
+          }
+        ]
+			}
+		},
+
+    "securityGroupInternalBuild" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Provides external access via HTTP (port 80)",
+        "VpcId" : { "Ref" : "vpcBuild" },
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "securityGroupHTTPBuild"
+          }
+        ]
+      }
+    },
+
+    "securityGroupIngressInternalHTTPBuild" : {
+			"Type" : "AWS::EC2::SecurityGroupIngress",
+			"Properties" : {
+        "GroupId" : { "Ref" : "securityGroupInternalBuild" },
+        "IpProtocol" : "tcp",
+        "FromPort" : "80",
+        "ToPort" : "80",
+        "SourceSecurityGroupId" : { "Ref" : "securityGroupInternalBuild" }
+      }
+		},
+
+    "elbBuild" : {
+			"Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Properties": {
+				"ConnectionDrainingPolicy" : {
+					"Enabled" : true,
+					"Timeout" : 300
+				},
+				"ConnectionSettings" : {
+					"IdleTimeout" : 900
+				},
+				"CrossZone" : true,
+				"HealthCheck" : {
+					"HealthyThreshold" : "5",
+					"Interval" : "60",
+					"Target" : "HTTP:80/login",
+					"Timeout" : "50",
+					"UnhealthyThreshold" : "2"
+				},
+				"Listeners" : [
+					{
+						"LoadBalancerPort" : "80",
+						"Protocol" : "HTTP",
+						"InstancePort" : "80",
+						"InstanceProtocol" : "HTTP"
+					}
+				],
+				"SecurityGroups" : [ { "Ref" : "securityGroupExternalHTTPBuild" }, { "Ref" : "securityGroupInternalBuild" } ],
+				"Subnets" : [ { "Ref" : "subnetABuild"}, { "Ref" : "subnetBBuild"}, { "Ref" : "subnetCBuild"} ]
+			}
+		},
+
+    "asgBuild" : {
+			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+			"Properties" : {
+				"AvailabilityZones" : { "Fn::GetAZs" : "" },
+				"DesiredCapacity" : "1",
+				"HealthCheckGracePeriod" : "300",
+				"HealthCheckType" : "EC2",
+				"LaunchConfigurationName" : { "Ref" : "lcBuild" },
+				"LoadBalancerNames" : [ { "Ref" : "elbBuild" } ],
+				"MaxSize" : "1",
+				"MinSize" : "1",
+        "VPCZoneIdentifier" : [ { "Ref" : "subnetABuild"}, { "Ref" : "subnetBBuild"}, { "Ref" : "subnetCBuild"} ],
+				"Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "build",
+            "PropagateAtLaunch" : true
+          }
+        ]
+			},
+			"CreationPolicy" : { "ResourceSignal" : { "Timeout" : "PT10M" } },
+			"UpdatePolicy" : {
+				"AutoScalingRollingUpdate" : {
+					"MaxBatchSize" : "1",
+					"MinInstancesInService" : "1",
+					"WaitOnResourceSignals" : true,
+					"PauseTime" : "PT10M"
+				}
+			}
+		},
+
+    "lcBuild" : {
+			"Type" : "AWS::AutoScaling::LaunchConfiguration",
+			"Properties" : {
+				"ImageId" : { "Fn::FindInMap" : [ "Regions", { "Ref" : "Region" }, "ami" ] },
+				"InstanceType" : "t2.micro",
+        "KeyName" : "mine",
+				"SecurityGroups" : [ { "Ref" : "securityGroupInternalBuild" } ],
+				"UserData" : {
+					"Fn::Base64" : {
+						"Fn::Join" : [ "",
+							[
+								"#!/bin/bash -x\n",
+								"",
+                "# Set timezone based on region we're running in\n",
+								"ln -sf /usr/share/zoneinfo/", { "Fn::FindInMap" : [ "Regions", { "Ref" : "Region" }, "timezone" ] }, " /etc/localtime\n",
+								"",
+                "# Install and configure Docker and Git\n",
+        				"sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D\n",
+        				"echo 'deb https://apt.dockerproject.org/repo ubuntu-trusty main' | sudo tee /etc/apt/sources.list.d/docker.list\n",
+        				"sudo apt-get update\n",
+                "sudo apt-get install -y python2.7 python-pip ntp apt-transport-https ca-certificates docker-engine=1.12.0-0~trusty git\n",
+                "sudo pip install awscli https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                "sudo cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup\n",
+                "sudo chmod +x /etc/init.d/cfn-hup\n",
+                "sudo update-rc.d cfn-hup defaults\n",
+                "",
+                "# Get Jenkins code from Github\n",
+                "git clone https://github.com/williamroberts/jenkins\n",
+                "",
+                "# Fire up Jenkins in Docker\n",
+                "sudo docker build -t jenkins jenkins\n",
+                "",
+                "sudo docker run",
+                "  --name jenkins",
+                "  -d",
+                "  -p 80:8080",
+                "  -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\"",
+                "  -e JENKINS_LOGIN_USERNAME=\"", { "Ref" : "JenkinsUserName" },"\"",
+                "  -e JENKINS_LOGIN_PASSWORD=\"", { "Ref" : "JenkinsPassword" },"\"",
+                "  -e GITHUB_USERNAME=\"", { "Ref" : "GithubUsername" },"\"",
+                "  -e GITHUB_PASSWORD=\"", { "Ref" : "GithubPassword" },"\"",
+                "  -e GITHUB_ACCOUNT=\"", { "Ref" : "GithubAccount" },"\"",
+                "  -v /var/run/docker.sock:/var/run/docker.sock",
+                "  jenkins\n",
+                "",
+                "# Signal Cloudformation to say resource start-up is complete\n",
+								"cfn-signal -e $? --stack ", { "Ref" : "AWS::StackName" }, " --resource asgBuild --region ", { "Ref" : "AWS::Region" }, "\n"
+							]
+						]
+					}
+				}
+			}
+		}
+  }
+}
