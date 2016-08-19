@@ -1,11 +1,15 @@
 FROM jenkins:2.7.2
 
 
-# Install Docker daemon
+# Install tools, including AWS CLI
 USER root
 RUN apt-get update && \
-    apt-get install -y apt-transport-https ca-certificates && \
-    echo "deb https://apt.dockerproject.org/repo debian-jessie main" > /etc/apt/sources.list.d/docker.list && \
+    apt-get install -y apt-transport-https ca-certificates python2.7 python-pip ntp && \
+    pip install awscli https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+
+
+# Install Docker daemon
+RUN echo "deb https://apt.dockerproject.org/repo debian-jessie main" > /etc/apt/sources.list.d/docker.list && \
     apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D && \
     apt-get update && \
     apt-get install -y docker-engine=1.12.0-0~jessie
@@ -21,7 +25,8 @@ ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
 
 
 # Required envvars listed here for reference
-ENV JENKINS_LOGIN_USERNAME \
+ENV AWS_REGION \
+    JENKINS_LOGIN_USERNAME \
 		JENKINS_LOGIN_PASSWORD \
 		GITHUB_ACCOUNT \
 		GITHUB_USERNAME \

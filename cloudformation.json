@@ -330,6 +330,66 @@
       }
 		},
 
+    "cloudwatchLogsBuild": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 7
+      }
+    },
+
+    "iamRoleBuild": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "policyBuild",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:Create*",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [ "arn:aws:logs:*:*:*" ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "iamInstanceProfileBuild": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "iamRoleBuild"
+          }
+        ]
+      }
+    },
+
     "elbBuild" : {
 			"Type": "AWS::ElasticLoadBalancing::LoadBalancer",
 			"Properties": {
@@ -395,6 +455,7 @@
     "lcBuild" : {
 			"Type" : "AWS::AutoScaling::LaunchConfiguration",
 			"Properties" : {
+        "IamInstanceProfile": { "Ref": "iamInstanceProfileBuild" },
 				"ImageId" : { "Fn::FindInMap" : [ "Regions", { "Ref" : "Region" }, "ami" ] },
 				"InstanceType" : "t2.micro",
         "KeyName" : "mine",
@@ -428,12 +489,16 @@
                 "  --name jenkins",
                 "  -d",
                 "  -p 80:8080",
+                "  --log-driver=", { "Ref" : "cloudwatchLogsBuild" },
+                "  --log-opt awslogs-region=", { "Ref" : "AWS::Region" },
+                "  --log-opt awslogs-group=build",
+                "  -e AWS_REGION=\"", { "Ref" : "AWS::Region" }, "\"",
                 "  -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\"",
-                "  -e JENKINS_LOGIN_USERNAME=\"", { "Ref" : "JenkinsUserName" },"\"",
-                "  -e JENKINS_LOGIN_PASSWORD=\"", { "Ref" : "JenkinsPassword" },"\"",
-                "  -e GITHUB_USERNAME=\"", { "Ref" : "GithubUsername" },"\"",
-                "  -e GITHUB_PASSWORD=\"", { "Ref" : "GithubPassword" },"\"",
-                "  -e GITHUB_ACCOUNT=\"", { "Ref" : "GithubAccount" },"\"",
+                "  -e JENKINS_LOGIN_USERNAME=\"", { "Ref" : "JenkinsUserName" }, "\"",
+                "  -e JENKINS_LOGIN_PASSWORD=\"", { "Ref" : "JenkinsPassword" }, "\"",
+                "  -e GITHUB_USERNAME=\"", { "Ref" : "GithubUsername" }, "\"",
+                "  -e GITHUB_PASSWORD=\"", { "Ref" : "GithubPassword" }, "\"",
+                "  -e GITHUB_ACCOUNT=\"", { "Ref" : "GithubAccount" }, "\"",
                 "  -v /var/run/docker.sock:/var/run/docker.sock",
                 "  jenkins\n",
                 "",
