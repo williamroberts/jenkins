@@ -29,8 +29,8 @@ ENV AWS_REGION \
     JENKINS_LOGIN_USERNAME \
 		JENKINS_LOGIN_PASSWORD \
 		GITHUB_ACCOUNT \
-		GITHUB_USERNAME \
-		GITHUB_PASSWORD
+		GITHUB_TOKEN \
+    GITHUB_USERNAME
 
 
 # Copy hook scripts into Jenkins for automated post-init configuration

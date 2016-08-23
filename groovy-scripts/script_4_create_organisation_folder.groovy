@@ -10,7 +10,7 @@ def githubAccountName = System.getenv("GITHUB_ACCOUNT")
 def orgFolder = new OrganizationFolder(Jenkins.getInstance(), githubAccountName)
 
 // Create Github navigator for organisation folder
-def githubNavigator = new GitHubSCMNavigator("", githubAccountName, "github-credentials", "SAME")
+def githubNavigator = new GitHubSCMNavigator("", githubAccountName, "github-username-password", "SAME")
 orgFolder.getNavigators().push(githubNavigator)
 
 // Set folder to look for Jenkinsfiles in repositories
