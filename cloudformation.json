@@ -370,7 +370,30 @@
                     "logs:PutLogEvents"
                   ],
                   "Resource": [ "arn:aws:logs:*:*:*" ]
-                }
+                },
+								{
+                  "Effect": "Allow",
+                  "Action": [
+										"s3:Create*",
+										"s3:Put*",
+										"s3:List*"
+                  ],
+                  "Resource": [ "arn:aws:s3:::*" ]
+                },
+								{
+                  "Effect": "Allow",
+                  "Action": [
+										"route53:ChangeResourceRecordSets"
+                  ],
+                  "Resource": [ "arn:aws:route53:::hostedzone/*" ]
+                },
+								{
+									"Effect": "Allow",
+                  "Action": [
+										"route53:ListHostedZonesByName"
+                  ],
+                  "Resource": [ "*" ]
+								}
               ]
             }
           }
