@@ -448,7 +448,7 @@
 				"HealthCheckType" : "EC2",
 				"LaunchConfigurationName" : { "Ref" : "lcBuild" },
 				"LoadBalancerNames" : [ { "Ref" : "elbBuild" } ],
-				"MaxSize" : "1",
+				"MaxSize" : "2",
 				"MinSize" : "1",
         "VPCZoneIdentifier" : [ { "Ref" : "subnetABuild"}, { "Ref" : "subnetBBuild"}, { "Ref" : "subnetCBuild"} ],
 				"Tags" : [
