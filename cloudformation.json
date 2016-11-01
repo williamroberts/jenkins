@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
-	"Description" : "Creates an EC2 instance running a Dockerised version of Jenkins. Jenkins will start up and with a pre-configured organisation folder for the Github account/organisation given as part of the parameters. You can sign into Jenkins using the username and password provided in the JenkinsUsername and JenkinsPassword parameters. The EC2 instance runs inside an AutoScalingGroup spread across all 3 availability zones (the 2 available regions in which you can deploy this stack each have 3 zones - happy coincidence) so if a the zone it's running in happens to go down, the ASG will provision a new instance",
+	"Description" : "Creates an EC2 instance running a Dockerised version of Jenkins. Jenkins will start up and with a pre-configured organisation folder for the Github account/organisation given as part of the parameters. You can sign into Jenkins using the username and password provided in the JenkinsUsername and JenkinsPassword parameters. The EC2 instance runs inside an AutoScalingGroup spread across all 3 availability zones (the 2 available regions in which you can deploy this stack each have 3 zones - happy coincidence) so if a zone it's running in happens to go down, the ASG will provision a new instance",
 
   "Parameters" : {
     "KeyName" : {
@@ -19,7 +19,7 @@
       "NoEcho" : "true",
       "Type" : "String"
     },
-    "JenkinsUserName" : {
+    "JenkinsUsername" : {
       "Default" : "admin",
       "Description" : "The username with which you want to authenticate with Jenkins.",
       "NoEcho" : "true",
@@ -42,9 +42,9 @@
       "NoEcho" : "true",
       "Type" : "String"
     },
-    "GithubPassword" : {
+    "GithubToken" : {
       "AllowedPattern" : "[a-z0-9]*",
-      "Description" : "The password with which you want Jenkins to authenticate with Github. This should be a 40 character hash generated as a Github personal access token.",
+      "Description" : "The token with which you want Jenkins to authenticate with Github. This should be a 40 character hash generated as a Github personal access token.",
       "MaxLength" : "40",
       "MinLength" : "40",
       "NoEcho" : "true",
@@ -305,15 +305,15 @@
 			}
 		},
 
-    "securityGroupInternalBuild" : {
+    "securityGroupInternalHTTPBuild" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
-        "GroupDescription" : "Provides external access via HTTP (port 80)",
+        "GroupDescription" : "Provides internal access via HTTP (port 80)",
         "VpcId" : { "Ref" : "vpcBuild" },
         "Tags" : [
           {
             "Key" : "Name",
-            "Value" : "securityGroupHTTPBuild"
+            "Value" : "securityGroupInternalHTTPBuild"
           }
         ]
       }
@@ -322,11 +322,11 @@
     "securityGroupIngressInternalHTTPBuild" : {
 			"Type" : "AWS::EC2::SecurityGroupIngress",
 			"Properties" : {
-        "GroupId" : { "Ref" : "securityGroupInternalBuild" },
+        "GroupId" : { "Ref" : "securityGroupInternalHTTPBuild" },
         "IpProtocol" : "tcp",
         "FromPort" : "80",
         "ToPort" : "80",
-        "SourceSecurityGroupId" : { "Ref" : "securityGroupInternalBuild" }
+        "SourceSecurityGroupId" : { "Ref" : "securityGroupInternalHTTPBuild" }
       }
 		},
 
@@ -416,7 +416,7 @@
 						"InstanceProtocol" : "HTTP"
 					}
 				],
-				"SecurityGroups" : [ { "Ref" : "securityGroupExternalHTTPBuild" }, { "Ref" : "securityGroupInternalBuild" } ],
+				"SecurityGroups" : [ { "Ref" : "securityGroupExternalHTTPBuild" }, { "Ref" : "securityGroupInternalHTTPBuild" } ],
 				"Subnets" : [ { "Ref" : "subnetABuild"}, { "Ref" : "subnetBBuild"}, { "Ref" : "subnetCBuild"} ]
 			}
 		},
@@ -459,7 +459,7 @@
 				"ImageId" : { "Fn::FindInMap" : [ "Regions", { "Ref" : "Region" }, "ami" ] },
 				"InstanceType" : "t2.micro",
         "KeyName" : "mine",
-				"SecurityGroups" : [ { "Ref" : "securityGroupInternalBuild" } ],
+				"SecurityGroups" : [ { "Ref" : "securityGroupInternalHTTPBuild" } ],
 				"UserData" : {
 					"Fn::Base64" : {
 						"Fn::Join" : [ "",
@@ -489,16 +489,16 @@
                 "  --name jenkins",
                 "  -d",
                 "  -p 80:8080",
-                "  --log-driver=", { "Ref" : "cloudwatchLogsBuild" },
+                "  --log-driver=awslogs",
                 "  --log-opt awslogs-region=", { "Ref" : "AWS::Region" },
-                "  --log-opt awslogs-group=build",
+                "  --log-opt awslogs-group=", { "Ref" : "cloudwatchLogsBuild" },
                 "  -e AWS_REGION=\"", { "Ref" : "AWS::Region" }, "\"",
                 "  -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\"",
 								"  -e JENKINS_LOGIN_PASSWORD=\"", { "Ref" : "JenkinsPassword" }, "\"",
-                "  -e JENKINS_LOGIN_USERNAME=\"", { "Ref" : "JenkinsUserName" }, "\"",
+                "  -e JENKINS_LOGIN_USERNAME=\"", { "Ref" : "JenkinsUsername" }, "\"",
 								"  -e JENKINS_URL=\"http://", { "Ref" : "SubdomainName" }, ".", { "Ref" : "DomainName" }, "\"",
 								"  -e GITHUB_ACCOUNT=\"", { "Ref" : "GithubAccount" }, "\"",
-                "  -e GITHUB_PASSWORD=\"", { "Ref" : "GithubPassword" }, "\"",
+								"  -e GITHUB_TOKEN=\"", { "Ref" : "GithubToken" }, "\"",
 								"  -e GITHUB_USERNAME=\"", { "Ref" : "GithubUsername" }, "\"",
                 "  -v /var/run/docker.sock:/var/run/docker.sock",
                 "  jenkins\n",
