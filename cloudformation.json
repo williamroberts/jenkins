@@ -3,11 +3,6 @@
 	"Description" : "Creates an EC2 instance running a Dockerised version of Jenkins. Jenkins will start up and with a pre-configured organisation folder for the Github account/organisation given as part of the parameters. You can sign into Jenkins using the username and password provided in the JenkinsUsername and JenkinsPassword parameters. The EC2 instance runs inside an AutoScalingGroup spread across all 3 availability zones (the 2 available regions in which you can deploy this stack each have 3 zones - happy coincidence) so if a zone it's running in happens to go down, the ASG will provision a new instance",
 
   "Parameters" : {
-    "KeyName" : {
-      "Description" : "The name of the .pem file that you plan to use to access the instance created as part of this stack.",
-      "NoEcho" : "true",
-      "Type" : "String"
-    },
     "DomainName" : {
       "Description" : "The domain at which you wish to browse Jenkins.",
       "NoEcho" : "true",
@@ -52,8 +47,8 @@
     },
 		"Region" : {
       "AllowedValues" : [ "ap-southeast-2", "eu-west-1" ],
-			"Default" : "ap-southeast-2",
-			"Description" : "The region into which to deploy the stack. Defaults to ap-southeast-2 whilst I'm living in Sydney.",
+			"Default" : "eu-west-1",
+			"Description" : "The region into which to deploy the stack.",
       "Type" : "String"
 		}
   },
@@ -481,7 +476,6 @@
         "IamInstanceProfile": { "Ref": "iamInstanceProfileBuild" },
 				"ImageId" : { "Fn::FindInMap" : [ "Regions", { "Ref" : "Region" }, "ami" ] },
 				"InstanceType" : "t2.micro",
-        "KeyName" : "mine",
 				"SecurityGroups" : [ { "Ref" : "securityGroupInternalHTTPBuild" } ],
 				"UserData" : {
 					"Fn::Base64" : {
