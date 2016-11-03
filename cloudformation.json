@@ -367,6 +367,13 @@
 										"route53:ListHostedZonesByName"
                   ],
                   "Resource": [ "*" ]
+								},
+								{
+									"Effect": "Allow",
+                  "Action": [
+										"iam:ListAccountAliases"
+                  ],
+                  "Resource": [ "*" ]
 								}
               ]
             }
