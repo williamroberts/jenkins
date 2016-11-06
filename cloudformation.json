@@ -374,6 +374,15 @@
 										"iam:ListAccountAliases"
                   ],
                   "Resource": [ "*" ]
+								},
+								{
+									"Effect": "Allow",
+									"Action": [
+										"cloudformation:ListStacks",
+										"cloudformation:CreateStack",
+										"cloudformation:UpdateStack"
+									],
+									"Resource": "arn:aws:cloudformation:*"
 								}
               ]
             }
