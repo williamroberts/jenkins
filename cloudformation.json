@@ -348,6 +348,7 @@
 								{
                   "Effect": "Allow",
                   "Action": [
+										"s3:Get*",
 										"s3:Create*",
 										"s3:Put*",
 										"s3:List*"
@@ -371,18 +372,47 @@
 								{
 									"Effect": "Allow",
                   "Action": [
-										"iam:ListAccountAliases"
+										"iam:ListAccountAliases",
+										"iam:PassRole",
+										"iam:GetRole",
+										"iam:CreateRole",
+										"iam:DeleteRole",
+										"iam:PutRolePolicy",
+										"iam:DeleteRolePolicy"
                   ],
                   "Resource": [ "*" ]
 								},
 								{
 									"Effect": "Allow",
 									"Action": [
+										"cloudformation:DescribeStacks",
 										"cloudformation:ListStacks",
 										"cloudformation:CreateStack",
-										"cloudformation:UpdateStack"
+										"cloudformation:UpdateStack",
+										"cloudformation:DeleteStack"
 									],
-									"Resource": "arn:aws:cloudformation:*"
+									"Resource": "*"
+								},
+								{
+									"Effect": "Allow",
+									"Action": [
+										"sns:ListTopics",
+										"sns:CreateTopic",
+										"sns:DeleteTopic",
+										"sns:SetTopicAttributes",
+										"sns:GetTopicAttributes",
+										"sns:Subscribe"
+									],
+									"Resource": "arn:aws:sns:*:*:*"
+								},
+								{
+									"Effect": "Allow",
+									"Action": [
+										"lambda:GetFunction",
+										"lambda:CreateFunction",
+										"lambda:DeleteFunction"
+									],
+									"Resource": "*"
 								}
               ]
             }
