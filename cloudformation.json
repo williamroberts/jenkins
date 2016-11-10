@@ -414,6 +414,16 @@
 										"lambda:UpdateFunctionConfiguration"
 									],
 									"Resource": "*"
+								},
+								{
+									"Effect": "Allow",
+									"Action": [
+										"ses:ListIdentities",
+										"ses:ListTopics",
+										"ses:SetIdentityNotificationTopic",
+										"ses:VerifyEmailIdentity"
+									],
+									"Resource": "*"
 								}
               ]
             }
