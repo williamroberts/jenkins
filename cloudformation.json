@@ -410,7 +410,8 @@
 									"Action": [
 										"lambda:GetFunction",
 										"lambda:CreateFunction",
-										"lambda:DeleteFunction"
+										"lambda:DeleteFunction",
+										"lambda:UpdateFunctionConfiguration"
 									],
 									"Resource": "*"
 								}
