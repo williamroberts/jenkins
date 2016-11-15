@@ -424,6 +424,14 @@
 										"ses:VerifyEmailIdentity"
 									],
 									"Resource": "*"
+								},
+								{
+									"Effect": "Allow",
+									"Action": [
+										"dynamodb:DescribeTable",
+										"dynamodb:CreateTable"
+									],
+									"Resource": "arn:aws:dynamodb:*:*:table/*"
 								}
               ]
             }
